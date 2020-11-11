@@ -13,6 +13,7 @@ library(grid)
 library(kableExtra)
 library(gridExtra)
 library(shinydashboard)
+library(lubridate)
 
 hrcc <- read.csv("hrc_county.csv", head = TRUE)
 hrcctable <- hrcc[,c(1:3,7,9:12)]
@@ -21,6 +22,11 @@ colnames(hrcctable) <-  c("DisasterNum","Year","Incident","State","County","Proj
 
 loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
 loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
+
+date <- gsub("T"," ", hrcc$obligatedDate)
+date <- gsub(".000Z", "", date)
+date <- ymd_hms(date)
+hrcc$obligatedYear <- year(date)
 
 ui <- dashboardPage(
         dashboardHeader(title="FEMA Mapping"),
@@ -35,12 +41,13 @@ ui <- dashboardPage(
                 tabItem("Table",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year", "Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
+                                   sliderInput("Year1", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
+                                   # sliderInput("Year2", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
                             ),
                             
                             column(4,
                                    selectInput("DisasterNum",
-                                               "DisasterNum: ",
+                                               "Disaster Number: ",
                                                c("All",
                                                  unique(hrcctable$DisasterNum)))
                             ),
@@ -69,7 +76,8 @@ ui <- dashboardPage(
                 tabItem("Map",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year2", "Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
+                                   sliderInput("Year2", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
+                                   sliderInput("Year3", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             column(4,
                                    selectInput("Incident2",
@@ -86,7 +94,7 @@ ui <- dashboardPage(
                             column(4,
                                    selectInput("Amount",
                                                "Select a View:",
-                                               c("ProjectAmount","FederalShareObligated", "ToatlObligated"))
+                                               c("Project Amount","Federal Share Obligated", "Toatl Obligated"))
                             ),
                         ),
                         leafletOutput("LeafletPlot")
@@ -100,14 +108,11 @@ server <- function(input, output) {
     
     output$table <- DT::renderDataTable(DT::datatable({
         data <- hrcctable
-        data <- data[(data$Year >= input$Year[1] & data$Year <= input$Year[2]),]
-        
+        data <- data[data$Year %in% input$Year1,]
+        # data <- data[data$declarationYear %in% input$Year2,]
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
-        # if (input$Year != "All") {
-        #     data <- data[data$Year == input$Year,]
-        # }
         if (input$Incident != "All") {
             data <- data[data$Incident == input$Incident,]
         }
@@ -123,10 +128,8 @@ server <- function(input, output) {
     output$LeafletPlot <- renderLeaflet({
         data <- hrcc
         loadJ <- loadJ
-        data <- data[data$declarationYear >= input$Year2[1] & data$declarationYear <= input$Year2[2],]
-        # if (input$Year2 != "All") {
-        #     data <- data[data$declarationYear == input$Year2,]
-        # }
+        data <- data[data$declarationYear %in% input$Year2,]
+        data <- data[data$obligatedYear %in% input$Year3,]
         if (input$Incident2 != "All") {
             data <- data[data$incidentType == input$Incident2,]
         }
@@ -135,18 +138,18 @@ server <- function(input, output) {
         }
         
         dataplot <- data %>% group_by(Fips)
-        if (input$Amount == "ProjectAmount"){
+        if (input$Amount == "Project Amount"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
                           PlotAmount = sum(projectAmount)/1000)
             
         }
-        else if (input$Amount == "FederalShareObligated"){
+        else if (input$Amount == "Federal Share Obligated"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
                           PlotAmount = sum(federalShareObligated)/1000)
         }
-        else if (input$Amount == "ToatlObligated"){
+        else if (input$Amount == "Toatl Obligated"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
                           PlotAmount = sum(totalObligated)/1000)
