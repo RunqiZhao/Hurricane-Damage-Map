@@ -2,11 +2,19 @@
 title: "Mapping With more Data - FEMA"
 author: "Ricky"
 date: "11/10/2020"
-output: html_document
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: cerulean
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, 
+               warning = FALSE,
+               message = FALSE)
 pacman::p_load(
 tidyverse,
 drat,
@@ -23,26 +31,54 @@ leaflet
 ```
 
 ## Load Data
+We downloaded FEMA data from this link: <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1</a>
 
-```{r}
+This .csv file include detailed public assistance funded projects information. We selected the the Sever Storm(s), Hurricane and Coastal Storm incident-types in 2009-2018 for this analysis.
+
+This dataset is prepared for county-level plot.
+```{r echo=FALSE}
 hrcc <- read.csv("hrc_county.csv", head = TRUE)
-hrcs <- read.csv("hrc_statewide.csv", head = TRUE)
+# hrcs <- read.csv("hrc_statewide.csv", head = TRUE)
+head(hrcc[,c(1:3,7,9:12)])
 ```
-projectAmount("Project Amount"): The estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey	
-federalShareObligated("Federal Share Obligated"): The Public Assistance grant funding available to the grantee (State) in dollars, for sub-grantee's approved Project Worksheets	
-totalObligated("Total Obligated"): The federal share of the Public Assistance grant eligible project amount in dollars, plus grantee (State) and sub-grantee (applicant) administrative costs. The federal share is typically 75% of the total cost of the project
+Here are some explanation from FEMA website:
+
+projectAmount("Project Amount"): The estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey.
+
+federalShareObligated("Federal Share Obligated"): The Public Assistance grant funding available to the grantee (State) in dollars, for sub-grantee's approved Project Worksheets.
+
+totalObligated("Total Obligated"): The federal share of the Public Assistance grant eligible project amount in dollars, plus grantee (State) and sub-grantee (applicant) administrative costs. The federal share is typically 75% of the total cost of the project.
 
 ## Mapping
+In this plot, we take all years(2009-2018) data, calculated the summary of obligated amount of each county.
+```{r include=FALSE}
 
-```{r}
-# hrcc$projectSize <- as.factor(hrcc$projectSize)
 hrcc$Fips <- str_pad(hrcc$Fips, 5, side = "left", "0")
 
-# total obligated amount
-hrccJ <- hrcc %>% group_by(Fips) %>% 
-  summarise(state = unique(state), county = unique(county), TotalAmount = sum(totalObligated)) %>%
-  rename(GEO_ID = Fips)
+# year state obligated
+```
 
+```{r}
+# total obligated amount in thousands
+hrccJ <- hrcc %>% group_by(Fips) %>% 
+  summarise(state = unique(state), county = unique(county), 
+            TotalAmount = sum(totalObligated)/1000) %>%
+  rename(GEO_ID = Fips)
+```
+
+In order to give an obvious plot of each county, we delete some outlier points.
+```{r include=FALSE}
+outValue <- boxplot(hrccJ$TotalAmount)$out
+```
+
+```{r echo=TRUE}
+# outliers
+outliers <- hrccJ %>% filter(TotalAmount %in% outValue)
+head(outliers)
+hrccJ <- hrccJ %>% filter(!(TotalAmount %in% outValue))
+```
+
+```{r include=FALSE}
 # json file
 loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
 
@@ -54,13 +90,20 @@ hrccJoin <- geo_join(loadJ, hrccJ, by = "GEO_ID", how = "inner")
 
 # color pal
 pal <- colorNumeric("Blues", domain = hrccJoin$TotalAmount)
+```
 
-# popup
+Also add some popups to show the State, County and Total amount(in thousands).
+```{r}
+# popup 
 i_popup <- paste0("<strong>State: </strong>", hrccJoin$state, "<br>", 
                   "<strong>County: </strong>", hrccJoin$county, "<br>", 
-                  "<strong>Total Obligated Amount: </strong>", round(hrccJoin$TotalAmount,2)) 
+                  "<strong>Total Obligated Amount: </strong>", round(hrccJoin$TotalAmount,2) ,
+                  " ","thousands") 
+```
 
-# leaflet
+Plot the leaflet.
+```{r}
+# leaflet plot
 leaflet() %>% 
   addProviderTiles("CartoDB.Positron") %>%
   addProviderTiles(providers$Stamen.TonerLines,
@@ -69,12 +112,13 @@ leaflet() %>%
   addPolygons(data = hrccJoin,
               fillColor = ~pal(TotalAmount), 
               color = "#BDBDC3",
-              fillOpacity  = 1, 
+              fillOpacity  = 0.5, 
               smoothFactor = 0.2,
               weight = 1,
               popup = i_popup) %>%
   addLegend(pal = pal,
             values = hrccJoin$TotalAmount,
             position="bottomright",
-            title = "Total Obligated Amount(2009-2018)")
+            title = paste0("Total Obligated Amount",
+                           '<br>',"in thousands (2009-2018)"))
 ```
