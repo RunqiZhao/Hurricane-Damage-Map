@@ -28,7 +28,7 @@ leaflet
 )
 ```
 ## Introduction
-In this project, we are going to create an interactive map to take a look at the public assistance program summary data of hurricane from FEMA. 
+In this project, we are going to create our own interactive map to take a look at the public assistance program summary data from FEMA. 
 
 ## Load Data
 We downloaded FEMA data from this link: <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1</a>
