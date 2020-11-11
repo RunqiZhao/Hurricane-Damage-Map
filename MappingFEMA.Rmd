@@ -1,0 +1,80 @@
+---
+title: "Mapping With more Data - FEMA"
+author: "Ricky"
+date: "11/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(
+tidyverse,
+drat,
+maps,
+ggplot2,
+dplyr,
+lubridate,
+rgdal,
+geojsonio,
+tigris,
+usmap,
+leaflet
+)
+```
+
+## Load Data
+
+```{r}
+hrcc <- read.csv("hrc_county.csv", head = TRUE)
+hrcs <- read.csv("hrc_statewide.csv", head = TRUE)
+```
+projectAmount("Project Amount"): The estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey	
+federalShareObligated("Federal Share Obligated"): The Public Assistance grant funding available to the grantee (State) in dollars, for sub-grantee's approved Project Worksheets	
+totalObligated("Total Obligated"): The federal share of the Public Assistance grant eligible project amount in dollars, plus grantee (State) and sub-grantee (applicant) administrative costs. The federal share is typically 75% of the total cost of the project
+
+## Mapping
+
+```{r}
+# hrcc$projectSize <- as.factor(hrcc$projectSize)
+hrcc$Fips <- str_pad(hrcc$Fips, 5, side = "left", "0")
+
+# total obligated amount
+hrccJ <- hrcc %>% group_by(Fips) %>% 
+  summarise(state = unique(state), county = unique(county), TotalAmount = sum(totalObligated)) %>%
+  rename(GEO_ID = Fips)
+
+# json file
+loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
+
+# match fips
+loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
+
+# join two files
+hrccJoin <- geo_join(loadJ, hrccJ, by = "GEO_ID", how = "inner")
+
+# color pal
+pal <- colorNumeric("Blues", domain = hrccJoin$TotalAmount)
+
+# popup
+i_popup <- paste0("<strong>State: </strong>", hrccJoin$state, "<br>", 
+                  "<strong>County: </strong>", hrccJoin$county, "<br>", 
+                  "<strong>Total Obligated Amount: </strong>", round(hrccJoin$TotalAmount,2)) 
+
+# leaflet
+leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  addProviderTiles(providers$Stamen.TonerLines,
+                   options = providerTileOptions(opacity = 0.75)) %>%
+  setView(-89.275673, 37.098, zoom = 4) %>%
+  addPolygons(data = hrccJoin,
+              fillColor = ~pal(TotalAmount), 
+              color = "#BDBDC3",
+              fillOpacity  = 1, 
+              smoothFactor = 0.2,
+              weight = 1,
+              popup = i_popup) %>%
+  addLegend(pal = pal,
+            values = hrccJoin$TotalAmount,
+            position="bottomright",
+            title = "Total Obligated Amount(2009-2018)")
+```

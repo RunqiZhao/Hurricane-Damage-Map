@@ -5,9 +5,9 @@ library(lubridate)
 
 # # FEMA data link: https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1
 # data <- read.csv('PublicAssistanceFundedProjectsDetails.csv', head = TRUE)
- 
+
 # # orginal data is too large to upload, select hurricane and stoems from 2009 - 2018 and save as new data file.
-# hurricane <- data %>% filter(incidentType %in% c("Hurricane","Severe Storm(s)"))
+# hurricane <- data %>% filter(incidentType %in% c("Hurricane","Severe Storm(s)","Coastal Storm"))
 # hurricane <- hurricane %>% select(-c("hash","lastRefresh","id"))
 # hurricane$declarationDate <-  as_datetime(hurricane$declarationDate)
 # hurricane$declarationYear <-  year(hurricane$declarationDate)
@@ -37,8 +37,8 @@ colnames(hrc)
 # unique(paste(hrc$dcc,hrc$damageCategory,sep = " - "))
 # unique(hrc$damageCategoryCode)
 
-hrc_statewide <- hrc_statewide %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","stateNumberCode","projectAmount", "federalShareObligated", "totalObligated","obligatedDate")
-hrc_county <- hrc_county %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","stateNumberCode","projectAmount", "federalShareObligated", "totalObligated","Fips","obligatedDate")
+hrc_statewide <- hrc_statewide %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","state","stateNumberCode","county","projectAmount", "federalShareObligated", "totalObligated","obligatedDate")
+hrc_county <- hrc_county %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","state","stateNumberCode","county","projectAmount", "federalShareObligated", "totalObligated","Fips","obligatedDate")
 
 write.csv(hrc_statewide,"hrc_statewide.csv",row.names=FALSE)
 write.csv(hrc_county,"hrc_county.csv",row.names=FALSE)
