@@ -15,10 +15,13 @@ library(leaflet)
 library(grid)
 library(kableExtra)
 library(gridExtra)
+library(lubridate)
 
 hrcc <- read.csv("hrc_county.csv", head = TRUE)
-hrcctable <- hrcc[,c(1:3,7,9:12)]
-colnames(hrcctable) <-  c("DisasterNum","Year","Incident","State","County","ProjectAmount","FederalShareObligated","ToatlObligated")
+hrcc$obligatedDate <-  as_datetime(hrcc$obligatedDate)
+hrcc$obligatedYear <-  year(hrcc$obligatedDate)
+hrcctable <- hrcc[,c(1:3,7,9:12,15)]
+colnames(hrcctable) <-  c("DisasterNum","Declaration_Year","Incident","State","County","ProjectAmount","FederalShareObligated","ToatlObligated","Obligated_Year")
 
 
 loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
@@ -38,29 +41,35 @@ ui <- dashboardPage(
           tabItems(
             tabItem("Table",
                          fluidRow(
-                             column(4,
+                           column(4,
+                                  sliderInput("Year",
+                                              "Declaration Year:",
+                                              min=2009, max=2018, value=c(2009, 2018)),
+                                  sliderInput("Year3",
+                                              "Obligated Year:",
+                                              min=2009, max=2018, value=c(min(hrcctable$Obligated_Year), max(hrcctable$Obligated_Year)))
+                           ), 
+                           
+                           column(4,
                                     selectInput("DisasterNum",
                                                 "DisasterNum: ",
                                                 c("All",
                                                   unique(hrcctable$DisasterNum)))
                              ),
-                             column(4,
-                                    sliderInput("Year",
-                                                "Year:",
-                                                min=2009, max=2018, value=c(2009, 2018))
-                             ),
-                             column(4,
+                             
+                            column(4,
                                     selectInput("Incident",
                                                 "Incident Type:",
                                                 c("All",
                                                   unique(hrcctable$Incident)))
-                             ),
+                             ), 
                              column(4,
                                     selectInput("State",
                                                 "State:",
                                                 c("All",
                                                   unique(hrcctable$State)))
                              ),
+                           
                              column(4,
                                     selectInput("County",
                                                 "County:",
@@ -75,7 +84,11 @@ ui <- dashboardPage(
                          
                          fluidRow(
                              column(4,
-                                    sliderInput("Year2", "Year: ", min=2009, max=2018, value=c(2009, 2018))
+                                    sliderInput("Year2", "Declaration Year:", min=2009, max=2018, value=c(2009, 2018)),
+                                    sliderInput("Year4",
+                                                "Obligated Year:",
+                                                min=2009, max=2018, value=c(min(hrcc$obligatedYear), max(hrcc$obligatedYear)))
+                                    
                              ),
                              column(4,
                                     selectInput("Incident2",
@@ -105,7 +118,8 @@ server <- function(input, output) {
     
     output$table <- DT::renderDataTable(DT::datatable({
         data <- hrcctable
-        data <- filter(data,Year >= input$Year[1] & Year <= input$Year[2])
+        data <- filter(data,Declaration_Year >= input$Year[1] & Declaration_Year <= input$Year[2])
+        data <- filter(data,Obligated_Year >= input$Year3[1] & Obligated_Year <= input$Year3[2])
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
@@ -131,6 +145,7 @@ server <- function(input, output) {
         #     data <- data[data$declarationYear == input$Year2,]
         # }
         data <- filter(data,declarationYear >= input$Year2[1] & declarationYear <= input$Year2[2])
+        data <- filter(data,obligatedYear >= input$Year4[1] & obligatedYear <= input$Year4[2])
         if (input$Incident2 != "All") {
             data <- data[data$incidentType == input$Incident2,]
         }
