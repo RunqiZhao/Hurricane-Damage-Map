@@ -1,0 +1,12 @@
+name: MappingMoreData-FEMA
+title: MappingMoreData-FEMA
+username:
+account: chmeng97
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3210355
+bundleId: 3847716
+url: https://chmeng97.shinyapps.io/MappingMoreData-FEMA/
+when: 1605108073.46694
+asMultiple: FALSE
+asStatic: FALSE
