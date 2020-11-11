@@ -52,7 +52,7 @@ ui <- fluidPage(
     
     fluidRow(
         column(3,
-               # radioButtons("view", "Select a view", c("Total Obligated", "Total Declarations", "Applicants with Funded Projects")),
+               radioButtons("view", "Select a view", c("Total Obligated", "Total Declarations", "Applicants with Funded Projects")),
                selectInput("diState", "Disaster-State", choices=c("All", unique(hrcc$state)))
                ),
         column(3,
@@ -72,30 +72,20 @@ ui <- fluidPage(
 server <- function(input, output) {
     
     output$FEMAleaflet <- renderLeaflet({
-        # join two files
-        hrccJSub <- hrccJ
-        
-        if(input$diState!="All"){
-            hrccJSub <- hrccJSub %>%
-                filter(state==input.diState)
-        }
-        
-        hrccJoinSub <- geo_join(loadJ, hrccJSub, by = "GEO_ID", how = "inner")
-        
         # color pal
-        pal <- colorNumeric("Blues", domain = hrccJoinSub$TotalAmount)
+        pal <- colorNumeric("Blues", domain = hrccJoin$TotalAmount)
 
         # popup
-        i_popup <- paste0("<strong>State: </strong>", hrccJoinSub$state, "<br>",
-                          "<strong>County: </strong>", hrccJoinSub$county, "<br>",
-                          "<strong>Total Obligated Amount: </strong>", round(hrccJoinSub$TotalAmount,2))
+        i_popup <- paste0("<strong>State: </strong>", hrccJoin$state, "<br>",
+                          "<strong>County: </strong>", hrccJoin$county, "<br>",
+                          "<strong>Total Obligated Amount: </strong>", round(hrccJoin$TotalAmount,2))
 
         leaflet() %>%
             addProviderTiles("CartoDB.Positron") %>%
             addProviderTiles(providers$Stamen.TonerLines,
                              options = providerTileOptions(opacity = 0.75)) %>%
             setView(-89.275673, 37.098, zoom = 4) %>%
-            addPolygons(data = hrccJoinSub,
+            addPolygons(data = hrccJoin,
                         fillColor = ~pal(TotalAmount),
                         color = "#BDBDC3",
                         fillOpacity  = 1,
@@ -103,7 +93,7 @@ server <- function(input, output) {
                         weight = 1,
                         popup = i_popup) %>%
             addLegend(pal = pal,
-                      values = hrccJoinSub$TotalAmount,
+                      values = hrccJoin$TotalAmount,
                       position="bottomright",
                       title = "Total Obligated Amount(2009-2018)")
     })
