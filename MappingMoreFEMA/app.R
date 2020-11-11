@@ -172,6 +172,7 @@ server <- function(input, output) {
             addProviderTiles(providers$Stamen.TonerLines,
                              options = providerTileOptions(opacity = 0.75)) %>%
             setView(-89.275673, 37.098, zoom = 4) %>%
+            setMaxBounds(lng1=-130, lng2=-60, lat1=23, lat2=50) %>%
             addPolygons(data = dataJoin,
                         fillColor = ~pal(PlotAmount), 
                         color = "#BDBDC3",
