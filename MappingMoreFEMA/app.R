@@ -35,7 +35,7 @@ ui <- dashboardPage(
                 tabItem("Table",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year", "Year: ", min=2010, max=2017, value=c(2010, 2017))
+                                   sliderInput("Year", "Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             
                             column(4,
@@ -69,7 +69,7 @@ ui <- dashboardPage(
                 tabItem("Map",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year2", "Year: ", min=2010, max=2017, value=c(2010, 2017))
+                                   sliderInput("Year2", "Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             column(4,
                                    selectInput("Incident2",
