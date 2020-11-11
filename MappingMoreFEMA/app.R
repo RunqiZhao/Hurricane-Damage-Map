@@ -52,7 +52,9 @@ ui <- dashboardPage(
                                                  unique(hrcctable$DisasterNum)))
                             ),
                             column(4,
-                                   selectInput("Incident",
+                                   # radioButtons("Incident1", "Incident Type:", c("All",unique(hrcctable$Incident))),
+                                   
+                                   selectInput("Incident1",
                                                "Incident Type:",
                                                c("All",
                                                  unique(hrcctable$Incident)))
@@ -80,6 +82,8 @@ ui <- dashboardPage(
                                    sliderInput("Year3", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             column(4,
+                                   # radioButtons("Incident2", "Incident Type:", c("All", unique(hrcc$incidentType))),
+                                   
                                    selectInput("Incident2",
                                                "Incident Type:",
                                                c("All",
@@ -113,8 +117,8 @@ server <- function(input, output) {
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
-        if (input$Incident != "All") {
-            data <- data[data$Incident == input$Incident,]
+        if (input$Incident1 != "All") {
+            data <- data[data$Incident == input$Incident1,]
         }
         if (input$State != "All") {
             data <- data[data$State == input$State,]
@@ -141,18 +145,21 @@ server <- function(input, output) {
         if (input$Amount == "Project Amount"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
-                          PlotAmount = sum(projectAmount)/1000)
+                          PlotAmount = sum(projectAmount)/1000,
+                          .groups = "drop")
             
         }
         else if (input$Amount == "Federal Share Obligated"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
-                          PlotAmount = sum(federalShareObligated)/1000)
+                          PlotAmount = sum(federalShareObligated)/1000,
+                          .groups = "drop")
         }
         else if (input$Amount == "Toatl Obligated"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
-                          PlotAmount = sum(totalObligated)/1000)
+                          PlotAmount = sum(totalObligated)/1000,
+                          .groups = "drop")
         }
         
         dataJ <- dataJ %>% rename(GEO_ID = Fips)
