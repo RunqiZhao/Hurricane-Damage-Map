@@ -29,6 +29,8 @@ usmap,
 leaflet
 )
 ```
+## Introduction
+In this project, we are going to create an interactive map to take a look at the public assistance program summary data of hurricane from FEMA. 
 
 ## Load Data
 We downloaded FEMA data from this link: <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1</a>
@@ -62,7 +64,8 @@ hrcc$Fips <- str_pad(hrcc$Fips, 5, side = "left", "0")
 # total obligated amount in thousands
 hrccJ <- hrcc %>% group_by(Fips) %>% 
   summarise(state = unique(state), county = unique(county), 
-            TotalAmount = sum(totalObligated)/1000) %>%
+            TotalAmount = sum(totalObligated)/1000,
+            .groups = "drop") %>%
   rename(GEO_ID = Fips)
 ```
 
@@ -122,3 +125,7 @@ leaflet() %>%
             title = paste0("Total Obligated Amount",
                            '<br>',"in thousands (2009-2018)"))
 ```
+
+## Reference
+
+
