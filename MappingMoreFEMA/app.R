@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(knitr)
 library(tidyverse)
 library(magrittr)
@@ -24,24 +25,18 @@ loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
 loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
 
 
-ui <- fluidPage(
-    
-    titlePanel("MappingFEMA"),
-    
-    sidebarLayout(
-        tabsetPanel(
-            conditionalPanel(
-                'input.dataset === "hrcctable"'),
-            
-            conditionalPanel(
-                'input.dataset === "hrcc" ',
+ui <- dashboardPage(
+        dashboardHeader(title="MappingFEMA"),
+        dashboardSidebar(
+            sidebarMenu(
+            menuItem("Table", tabName="Table"),
+            menuItem("Map", tabName="Map")
             )
         ),
         
-        mainPanel(
-            tabsetPanel(
-                id = 'dataset',
-                tabPanel("Hurricane and Storms Data",
+        dashboardBody(
+          tabItems(
+            tabItem("Table",
                          fluidRow(
                              column(4,
                                     selectInput("DisasterNum",
@@ -50,10 +45,9 @@ ui <- fluidPage(
                                                   unique(hrcctable$DisasterNum)))
                              ),
                              column(4,
-                                    selectInput("Year",
+                                    sliderInput("Year",
                                                 "Year:",
-                                                c("All",
-                                                  unique(hrcctable$Year)))
+                                                min=2009, max=2018, value=c(2009, 2018))
                              ),
                              column(4,
                                     selectInput("Incident",
@@ -77,14 +71,11 @@ ui <- fluidPage(
                          DT::dataTableOutput("table")
                 ),
                 
-                tabPanel("LeafletPlot",
+            tabItem("Map",
                          
                          fluidRow(
                              column(4,
-                                    selectInput("Year2",
-                                                "Year:",
-                                                c("All",
-                                                  unique(hrcc$declarationYear)))
+                                    sliderInput("Year2", "Year: ", min=2009, max=2018, value=c(2009, 2018))
                              ),
                              column(4,
                                     selectInput("Incident2",
@@ -104,23 +95,23 @@ ui <- fluidPage(
                                                 c("ProjectAmount","FederalShareObligated", "ToatlObligated"))
                              ),
                          ),
-                         leafletOutput("LeafletPlot"),
+                         leafletOutput("LeafletPlot")
                 )
             )
         )
-    )
 )
 
 server <- function(input, output) {
     
     output$table <- DT::renderDataTable(DT::datatable({
         data <- hrcctable
+        data <- filter(data,Year >= input$Year[1] & Year <= input$Year[2])
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
-        if (input$Year != "All") {
-            data <- data[data$Year == input$Year,]
-        }
+        # if (input$Year != "All") {
+        #     data <- data[data$Year == input$Year,]
+        # }
         if (input$Incident != "All") {
             data <- data[data$Incident == input$Incident,]
         }
@@ -136,9 +127,10 @@ server <- function(input, output) {
     output$LeafletPlot <- renderLeaflet({
         data <- hrcc
         loadJ <- loadJ
-        if (input$Year2 != "All") {
-            data <- data[data$declarationYear == input$Year2,]
-        }
+        # if (input$Year2 != "All") {
+        #     data <- data[data$declarationYear == input$Year2,]
+        # }
+        data <- filter(data,declarationYear >= input$Year2[1] & declarationYear <= input$Year2[2])
         if (input$Incident2 != "All") {
             data <- data[data$incidentType == input$Incident2,]
         }
