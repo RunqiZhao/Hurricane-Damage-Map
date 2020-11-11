@@ -1,0 +1,149 @@
+---
+title: "Mapping With more Data - FEMA"
+author: "Ricky"
+date: "11/10/2020"
+output:
+  revealjs::revealjs_presentation:
+    theme: solarized
+    transition: default
+    css: leaflet-reveal.css
+    center: false
+    reveal_options:
+      slideNumber: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+               warning = FALSE,
+               message = FALSE)
+pacman::p_load(
+tidyverse,
+drat,
+maps,
+ggplot2,
+dplyr,
+lubridate,
+rgdal,
+geojsonio,
+tigris,
+usmap,
+leaflet,
+kableExtra,
+grid,
+gridExtra
+)
+```
+
+# Load data
+
+We downloaded FEMA data from this link: <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1</a>
+
+This .csv file include detailed public assistance funded projects information. We selected the the Sever Storm(s), Hurricane and Coastal Storm incident-types in 2009-2018 for this analysis.
+
+## Dateset
+
+This dataset is prepared for county-level plot.
+
+```{r echo=FALSE}
+hrcc <- read.csv("hrc_county.csv", head = TRUE)
+# hrcs <- read.csv("hrc_statewide.csv", head = TRUE)
+kable(head(hrcc[,c(1:3,7,9:12)]),col.names = c("DisasterNum","Year","Incident","State","County","ProjectAmount","FederalShareObligated","ToatlObligated"),"html",align = "c") %>%
+  kable_styling(font_size = 15)
+```
+
+----
+
+Here are some explanation from FEMA website:
+
+projectAmount("Project Amount"): The estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey.
+
+federalShareObligated("Federal Share Obligated"): The Public Assistance grant funding available to the grantee (State) in dollars, for sub-grantee's approved Project Worksheets.
+
+totalObligated("Total Obligated"): The federal share of the Public Assistance grant eligible project amount in dollars, plus grantee (State) and sub-grantee (applicant) administrative costs. The federal share is typically 75% of the total cost of the project.
+
+
+# Mapping
+
+In this plot, we take all years(2009-2018) data, calculated the summary of obligated amount of each county.
+```{r include=FALSE}
+
+hrcc$Fips <- str_pad(hrcc$Fips, 5, side = "left", "0")
+# year state obligated
+```
+
+```{r echo=TRUE}
+# total obligated amount in thousands
+hrccJ <- hrcc %>% group_by(Fips) %>% 
+  summarise(state = unique(state), county = unique(county), 
+            TotalAmount = sum(totalObligated)/1000) %>%
+  rename(GEO_ID = Fips)
+```
+
+## Outliers
+
+In order to give an obvious plot of each county, we delete some outlier points.
+```{r include=FALSE}
+outValue <- boxplot(hrccJ$TotalAmount)$out
+```
+
+```{r echo=TRUE}
+# outliers
+outliers <- hrccJ %>% filter(TotalAmount %in% outValue)
+hrccJ <- hrccJ %>% filter(!(TotalAmount %in% outValue))
+kable(head(outliers),"html",align = "c")
+```
+
+```{r include=FALSE}
+# json file
+loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
+
+# match fips
+loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
+
+# join two files
+hrccJoin <- geo_join(loadJ, hrccJ, by = "GEO_ID", how = "inner")
+
+# color pal
+pal <- colorNumeric("Blues", domain = hrccJoin$TotalAmount)
+```
+
+## Popups
+Also add some popups to show the State, County and Total amount(in thousands).
+```{r echo=TRUE}
+# popup 
+i_popup <- paste0("<strong>State: </strong>", 
+                  hrccJoin$state, "<br>", 
+                  "<strong>County: </strong>", 
+                  hrccJoin$county, "<br>", 
+                  "<strong>Total Obligated Amount: </strong>",
+                  round(hrccJoin$TotalAmount,2) ,
+                  " ","thousands") 
+```
+
+## Leaflet map
+Plot the leaflet.
+```{r}
+# leaflet plot
+leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>%
+  addProviderTiles(providers$Stamen.TonerLines,
+                   options = providerTileOptions(opacity = 0.75)) %>%
+  setView(-89.275673, 37.098, zoom = 4) %>%
+  addPolygons(data = hrccJoin,
+              fillColor = ~pal(TotalAmount), 
+              color = "#BDBDC3",
+              fillOpacity  = 0.5, 
+              smoothFactor = 0.2,
+              weight = 1,
+              popup = i_popup) %>%
+  addLegend(pal = pal,
+            values = hrccJoin$TotalAmount,
+            position="bottomright",
+            title = paste0("Total Obligated Amount",
+                           '<br>',"in thousands (2009-2018)"))
+```
+
+# Inference: 
+Leaflet css file: Per Liedman
+
+<a href="https://gist.github.com/perliedman/9d42f6d1d6583e882df7ae9e95252c0d">https://gist.github.com/perliedman/9d42f6d1d6583e882df7ae9e95252c0d</a> 
