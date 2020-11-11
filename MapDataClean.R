@@ -37,8 +37,8 @@ colnames(hrc)
 # unique(paste(hrc$dcc,hrc$damageCategory,sep = " - "))
 # unique(hrc$damageCategoryCode)
 
-hrc_statewide <- hrc_statewide %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","stateNumberCode","projectAmount", "federalShareObligated", "totalObligated","obligatedDate")
-hrc_county <- hrc_county %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","stateNumberCode","projectAmount", "federalShareObligated", "totalObligated","Fips","obligatedDate")
+hrc_statewide <- hrc_statewide %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","state","stateNumberCode","county","projectAmount", "federalShareObligated", "totalObligated","obligatedDate")
+hrc_county <- hrc_county %>% select("disasterNumber", "declarationYear", "incidentType","applicationTitle","damageCategoryCode","projectSize","state","stateNumberCode","county","projectAmount", "federalShareObligated", "totalObligated","Fips","obligatedDate")
 
 write.csv(hrc_statewide,"hrc_statewide.csv",row.names=FALSE)
 write.csv(hrc_county,"hrc_county.csv",row.names=FALSE)
