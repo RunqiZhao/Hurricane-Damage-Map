@@ -26,7 +26,6 @@ loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
 loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
 
 hrcctable$ObligatedYear <- year(date)
-
 hrcc$obligatedYear <- year(date)
 
 ui <- dashboardPage(
@@ -51,7 +50,6 @@ ui <- dashboardPage(
                                                "Disaster Number: ",
                                                c("All",
                                                  unique(hrcctable$DisasterNum))),
-                                   # radioButtons("Incident1", "Incident Type:", c("All",unique(hrcctable$Incident))),
                                    selectInput("Incident1",
                                                "Incident Type:",
                                                c("All",
@@ -78,8 +76,6 @@ ui <- dashboardPage(
                                    sliderInput("Year4", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             column(4,
-                                   # radioButtons("Incident2", "Incident Type:", c("All", unique(hrcc$incidentType))),
-                                   
                                    selectInput("Incident2",
                                                "Incident Type:",
                                                c("All",
