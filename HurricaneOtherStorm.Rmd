@@ -1,0 +1,94 @@
+---
+title: "Extended Mapping Project"
+author: "Ruiqi Zhao, Danping Liu, Chenghao Meng"
+date: "2020/11/11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyverse","maps","lubridate")
+```
+
+```{r}
+# Load the data of US geolocation
+us_county <- map_data("county")
+us_state <- map_data("state")
+```
+
+```{r}
+# Load the data downloaded from FEMA
+fema_dt <- read.csv(file="C:/Users/CH.Meng/Desktop/PublicAssistanceFundedProjectsDetails.csv",header = T)
+```
+
+```{r}
+# Filter the disaster from 2009 to 2018
+fema_dt$declarationDate <-  as_datetime(fema_dt$declarationDate)
+fema_dt$declarationYear <-  year(fema_dt$declarationDate)
+fema_dt <- fema_dt %>% filter(declarationYear > 2009 & declarationYear < 2018)
+```
+
+```{r}
+# Filter the Hurricane, Severe Storm and Coastal Storm
+hurri_storm_pre <- fema_dt %>% filter(incidentType %in% c("Hurricane","Severe Storm(s)","Coastal Storm")) %>% select("disasterNumber","declarationYear","incidentType","state","county","projectAmount","federalShareObligated","totalObligated")
+```
+
+```{r}
+# Change the capital letter to lower
+hurri_storm_pre$state <- tolower(hurri_storm_pre$state)
+hurri_storm_pre$county <- tolower(hurri_storm_pre$county)
+```
+
+```{r}
+# Join hurri_strom_pre and us_county to get longitute and latitude
+us_county <- us_county %>% rename(state=region,county=subregion)
+
+hurri_storm <- left_join(us_county,hurri_storm_pre,by=c("county","state"))
+```
+
+```{r}
+# Print the colnames
+colnames(hurri_storm)
+```
+
+```{r message=FALSE, warning=FALSE}
+hurri_storm_new <- hurri_storm %>% 
+  group_by(long,lat,group,order,state,county,disasterNumber,declarationYear,incidentType) %>% 
+  summarise(sum_total=sum(totalObligated),
+            sum_proj_amount=sum(projectAmount),
+            sum_federal=sum(federalShareObligated))
+
+hurri_storm_new <- na.omit(hurri_storm_new)
+```
+
+
+```{r}
+# Boxplot to identify the outliers
+ggplot(data=hurri_storm_new)+geom_boxplot(aes(x=incidentType,y=sum_total))
+```
+
+```{r}
+# Filter the Hurricane
+hurricane <- hurri_storm_new %>% filter(incidentType=="Hurricane")
+
+max(hurricane$sum_total)
+```
+
+# Mapping
+```{r}
+p <- ggplot()+
+  geom_polygon(data=hurri_storm_new %>% 
+                 filter(incidentType=="Hurricane",
+                        declarationYear=="2010"),
+               aes(x=long,y=lat,group=group,fill=sum_total/10^6))+
+  
+  geom_path(data=us_county,mapping=aes(long,lat,group=group),color="grey")+
+  geom_path(data=us_state,mapping=aes(long,lat,group=group))
+```
+
+```{r}
+p + labs(title="Total Obligated of Hurricane",subtitle="Amount in Million, 2010",fill="Total Obligated" ) +
+  xlab("Longitute") + ylab("Latitude") +
+  scale_fill_continuous(low="#00CCFF",high="#00FF33",space="Lab")
+```
+
