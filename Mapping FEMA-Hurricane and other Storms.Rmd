@@ -1,0 +1,100 @@
+---
+title: "Mapping With more Data - FEMA"
+author: "Ruiqi Zhao, Danping Liu, Chenghao Meng"
+date: "2020/11/11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load("tidyverse","maps","lubridate")
+```
+
+```{r}
+# Load the data of US geolocation
+us_county <- map_data("county")
+us_state <- map_data("state")
+```
+
+```{r}
+# Load the data downloaded from FEMA
+fema_dt <- read.csv(file="C:/Users/CH.Meng/Desktop/BU MSSP/Course/MA615 DS in R/Project/Hurricane-Damage-Map/hrc_county.csv",header = T)
+```
+
+
+```{r}
+# Filter the Hurricane, Severe Storm and Coastal Storm
+hurri_storm_pre <- fema_dt %>%  select(-c("applicationTitle","damageCategoryCode","projectSize","stateNumberCode","obligatedDate"))
+```
+
+```{r}
+# Change the capital letter to lower
+hurri_storm_pre$state <- tolower(hurri_storm_pre$state)
+hurri_storm_pre$county <- tolower(hurri_storm_pre$county)
+```
+
+```{r message=FALSE, warning=FALSE}
+hurri_storm_pre2 <- 
+hurri_storm_pre %>% 
+  group_by(Fips,incidentType) %>% 
+  summarise(state = unique(state),
+            year = unique(declarationYear),
+            county = unique(county), 
+            TotalAmount = sum(totalObligated)/1000,
+            TotalProject = sum(projectAmount)/1000,
+            TotalFederal = 
+              sum(federalShareObligated)/1000
+            )
+hurri_storm_pre2$Fips <- as.character(hurri_storm_pre2$Fips)
+```
+
+
+```{r}
+# Make adjustments on fips
+county_fips <- county.fips
+county_fips$fips <- as.character(county_fips$fips)
+
+county_fips <- county_fips %>% separate(polyname, into= c("state","county"),sep= ",") %>% rename(Fips=fips)
+```
+
+```{r}
+# Join hurri_strom_pre and us_county to get longitute and latitude
+us_county <- us_county %>% rename(state=region,county=subregion)
+
+county_info <- right_join(county_fips,us_county,by=c("state","county"))
+```
+
+
+```{r}
+hurri_storm <- inner_join(county_info,hurri_storm_pre2,by=c("Fips","state","county"))
+```
+
+```{r}
+# Boxplot to identify the outliers
+ggplot(data=hurri_storm)+geom_boxplot(aes(x=incidentType,y=TotalAmount))
+```
+
+```{r include=FALSE}
+out_value <- boxplot(hurri_storm$TotalAmount)$out
+outliers <- hurri_storm %>% filter(TotalAmount %in% out_value)
+#head(outliers)
+hurri_storm_new <- hurri_storm %>% filter(!(TotalAmount %in% outValue))
+```
+
+# Mapping
+```{r}
+p <- ggplot()+
+  geom_polygon(data=hurri_storm_new %>% 
+                 filter(incidentType=="Hurricane"),
+               aes(x=long,y=lat,group=group,fill=TotalAmount))+
+  
+  geom_path(data=county_info,mapping=aes(long,lat,group=group),color="grey")+
+  geom_path(data=us_state,mapping=aes(long,lat,group=group))
+```
+
+```{r}
+p + labs(title="Total Obligated of Hurricane",subtitle="Amount in Thousand, 2009-2018",fill="Total Obligated" ) +
+  xlab("Longitute") + ylab("Latitude") +
+  scale_fill_continuous(low="#00CCFF",high="#00FF33",space="Lab")
+```
+
