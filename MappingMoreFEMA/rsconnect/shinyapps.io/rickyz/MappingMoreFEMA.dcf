@@ -1,0 +1,12 @@
+name: MappingMoreFEMA
+title: MappingMoreFEMA
+username:
+account: rickyz
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3210695
+bundleId: 3847959
+url: https://rickyz.shinyapps.io/MappingMoreFEMA/
+when: 1605111066.19424
+asMultiple: FALSE
+asStatic: FALSE

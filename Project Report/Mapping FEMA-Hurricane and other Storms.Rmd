@@ -2,7 +2,13 @@
 title: "Mapping With more Data - FEMA"
 author: "Runqi Zhao, Danping Liu, Chenghao Meng"
 date: "2020/11/11"
-output: html_document
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: cerulean
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
