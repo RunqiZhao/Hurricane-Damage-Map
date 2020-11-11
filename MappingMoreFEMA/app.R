@@ -44,10 +44,10 @@ ui <- dashboardPage(
                            column(4,
                                   sliderInput("Year",
                                               "Declaration Year:",
-                                              min=2009, max=2018, value=c(2009, 2018)),
+                                              min=2009, max=2018, value=c(2009, 2018), sep=""),
                                   sliderInput("Year3",
                                               "Obligated Year:",
-                                              min=2009, max=2018, value=c(min(hrcctable$Obligated_Year), max(hrcctable$Obligated_Year)))
+                                              min=2009, max=2018, value=c(min(hrcctable$Obligated_Year), max(hrcctable$Obligated_Year)), sep="")
                            ), 
                            
                            column(4,
@@ -84,10 +84,10 @@ ui <- dashboardPage(
                          
                          fluidRow(
                              column(4,
-                                    sliderInput("Year2", "Declaration Year:", min=2009, max=2018, value=c(2009, 2018)),
+                                    sliderInput("Year2", "Declaration Year:", min=2009, max=2018, value=c(2009, 2018), sep=""),
                                     sliderInput("Year4",
                                                 "Obligated Year:",
-                                                min=2009, max=2018, value=c(min(hrcc$obligatedYear), max(hrcc$obligatedYear)))
+                                                min=2009, max=2018, value=c(min(hrcc$obligatedYear),max(hrcc$obligatedYear)),sep="")
                                     
                              ),
                              column(4,
