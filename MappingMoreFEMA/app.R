@@ -17,15 +17,16 @@ library(lubridate)
 
 hrcc <- read.csv("hrc_county.csv", head = TRUE)
 hrcctable <- hrcc[,c(1:3,7,9:12)]
-colnames(hrcctable) <-  c("DisasterNum","Year","Incident","State","County","ProjectAmount","FederalShareObligated","ToatlObligated")
-
+colnames(hrcctable) <-  c("DisasterNum","DeclarationYear","Incident","State","County","ProjectAmount","FederalShareObligated","ToatlObligated")
+date <- gsub("T"," ", hrcc$obligatedDate)
+date <- gsub(".000Z", "", date)
+date <- ymd_hms(date)
 
 loadJ <- geojsonio::geojson_read("gz_2010_us_050_00_5m.json", what = "sp")
 loadJ$GEO_ID <- loadJ$GEO_ID %>% substr(start = 10, stop = 14)
 
-date <- gsub("T"," ", hrcc$obligatedDate)
-date <- gsub(".000Z", "", date)
-date <- ymd_hms(date)
+hrcctable$ObligatedYear <- year(date)
+
 hrcc$obligatedYear <- year(date)
 
 ui <- dashboardPage(
@@ -41,8 +42,8 @@ ui <- dashboardPage(
                 tabItem("Table",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year1", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
-                                   # sliderInput("Year2", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
+                                   sliderInput("Year1", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
+                                   sliderInput("Year2", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             
                             column(4,
@@ -78,8 +79,8 @@ ui <- dashboardPage(
                 tabItem("Map",
                         fluidRow(
                             column(4,
-                                   sliderInput("Year2", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
-                                   sliderInput("Year3", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
+                                   sliderInput("Year3", "Declaration Year: ", min=2010, max=2017, value=c(2010, 2017), sep=""),
+                                   sliderInput("Year4", "Obligated Year: ", min=2010, max=2017, value=c(2010, 2017), sep="")
                             ),
                             column(4,
                                    # radioButtons("Incident2", "Incident Type:", c("All", unique(hrcc$incidentType))),
@@ -112,8 +113,8 @@ server <- function(input, output) {
     
     output$table <- DT::renderDataTable(DT::datatable({
         data <- hrcctable
-        data <- data[data$Year %in% input$Year1,]
-        # data <- data[data$declarationYear %in% input$Year2,]
+        data <- data[data$DeclarationYear %in% input$Year1,]
+        data <- data[data$ObligatedYear %in% input$Year2,]
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
@@ -132,8 +133,8 @@ server <- function(input, output) {
     output$LeafletPlot <- renderLeaflet({
         data <- hrcc
         loadJ <- loadJ
-        data <- data[data$declarationYear %in% input$Year2,]
-        data <- data[data$obligatedYear %in% input$Year3,]
+        data <- data[data$declarationYear %in% input$Year3,]
+        data <- data[data$obligatedYear %in% input$Year4,]
         if (input$Incident2 != "All") {
             data <- data[data$incidentType == input$Incident2,]
         }
