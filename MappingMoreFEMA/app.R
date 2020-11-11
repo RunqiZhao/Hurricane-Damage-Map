@@ -66,8 +66,7 @@ ui <- dashboardPage(
                                                  unique(hrcctable$County)))
                             ),
                         ),
-                        DT::dataTableOutput("table")
-                ),
+                        DT::dataTableOutput("table"),style = "height:500px; overflow-x: scroll;"                ),
                 
                 tabItem("Map",
                         fluidRow(
