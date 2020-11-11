@@ -50,11 +50,8 @@ ui <- dashboardPage(
                                    selectInput("DisasterNum",
                                                "Disaster Number: ",
                                                c("All",
-                                                 unique(hrcctable$DisasterNum)))
-                            ),
-                            column(4,
+                                                 unique(hrcctable$DisasterNum))),
                                    # radioButtons("Incident1", "Incident Type:", c("All",unique(hrcctable$Incident))),
-                                   
                                    selectInput("Incident1",
                                                "Incident Type:",
                                                c("All",
@@ -64,9 +61,7 @@ ui <- dashboardPage(
                                    selectInput("State",
                                                "State:",
                                                c("All",
-                                                 unique(hrcctable$State)))
-                            ),
-                            column(4,
+                                                 unique(hrcctable$State))),
                                    selectInput("County",
                                                "County:",
                                                c("All",
@@ -88,18 +83,14 @@ ui <- dashboardPage(
                                    selectInput("Incident2",
                                                "Incident Type:",
                                                c("All",
-                                                 unique(hrcc$incidentType)))
-                            ),
-                            column(4,
+                                                 unique(hrcc$incidentType))),
                                    selectInput("State2",
                                                "State:",
                                                c("All",
                                                  unique(hrcc$state)))
                             ),
                             column(4,
-                                   selectInput("Amount",
-                                               "Select a View:",
-                                               c("Project Amount","Federal Share Obligated", "Toatl Obligated"))
+                                   radioButtons("Amount", "Select a view", c("Project Amount","Federal Share Obligated", "Total Obligated")),
                             ),
                         ),
                         leafletOutput("LeafletPlot")
@@ -156,7 +147,7 @@ server <- function(input, output) {
                           PlotAmount = sum(federalShareObligated)/1000,
                           .groups = "drop")
         }
-        else if (input$Amount == "Toatl Obligated"){
+        else if (input$Amount == "Total Obligated"){
             dataJ <-dataplot %>% 
                 summarise(state = unique(state), county = unique(county), 
                           PlotAmount = sum(totalObligated)/1000,
