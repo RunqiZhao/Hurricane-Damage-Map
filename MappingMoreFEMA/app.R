@@ -100,8 +100,8 @@ server <- function(input, output) {
     
     output$table <- DT::renderDataTable(DT::datatable({
         data <- hrcctable
-        data <- data[data$DeclarationYear %in% input$Year1,]
-        data <- data[data$ObligatedYear %in% input$Year2,]
+        data <- filter(data,between(data$DeclarationYear,input$Year1[1],input$Year1[2]))
+        data <- filter(data,between(data$ObligatedYear,input$Year2[1],input$Year2[2]))
         if (input$DisasterNum != "All") {
             data <- data[data$DisasterNum == input$DisasterNum,]
         }
@@ -120,8 +120,8 @@ server <- function(input, output) {
     output$LeafletPlot <- renderLeaflet({
         data <- hrcc
         loadJ <- loadJ
-        data <- data[data$declarationYear %in% input$Year3,]
-        data <- data[data$obligatedYear %in% input$Year4,]
+        data <- filter(data,between(data$declarationYear,input$Year3[1],input$Year3[2]))
+        data <- filter(data,between(data$obligatedYear,input$Year4[1],input$Year4[2]))
         if (input$Incident2 != "All") {
             data <- data[data$incidentType == input$Incident2,]
         }
