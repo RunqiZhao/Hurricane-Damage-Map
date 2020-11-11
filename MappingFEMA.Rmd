@@ -19,8 +19,6 @@ pacman::p_load(
 tidyverse,
 drat,
 maps,
-ggplot2,
-dplyr,
 lubridate,
 rgdal,
 geojsonio,
@@ -126,6 +124,5 @@ leaflet() %>%
                            '<br>',"in thousands (2009-2018)"))
 ```
 
-## Reference
-
-
+## Curiosity
+Spatial data is everywhere. When we want to compare the subjects from different areas, creating a map is much more intuitive than just looking at the bland data set. And that's why interactive mapping tools like leaflet is powerful. In the projects we done, we mainly focused on plotting polygons and paths. In <a href="https://leafletjs.com/reference-0.7.7.html">leaflet's official website</a>, we found that there are many others functions that can be done by leaflet. How could we draw the map that best illustrates our data? How could we prevent our map from being too fancy but not informative? 
